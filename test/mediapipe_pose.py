@@ -187,7 +187,10 @@ def main():
             print(f"错误: {e}")
             time.sleep(0.1)
 
-    landmarker.close()
+    try:
+        landmarker.close()
+    except Exception:
+        pass  # 忽略关闭时的错误
     return 0
 
 if __name__ == '__main__':
