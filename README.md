@@ -61,9 +61,10 @@ python3 cuda_edge_processor.py
 
 ### 3. MediaPipe 人体姿势识别
 
-- **模型**: MediaPipe Pose (33 个关键点)
+- **模型**: MediaPipe PoseLandmarker (33 个关键点)
 - **功能**: 实时人体骨架检测和绘制
 - **性能**: 30+ FPS
+- **模型文件**: 首次运行自动下载 `pose_landmarker.task`
 
 **运行**:
 ```bash
