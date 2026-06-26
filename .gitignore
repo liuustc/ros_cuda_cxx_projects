@@ -1,0 +1,49 @@
+# Build artifacts
+*.o
+*.so
+*.a
+*.exe
+test/cuda_test
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ROS2
+ros2_demo/build/
+ros2_demo/install/
+ros2_demo/log/
+
+# Third-party headers
+stb_image.h
+stb_image_write.h
+
+# CUDA
+*.cubin
+*.fatbin
+*.ptx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.jpg
+*.png
+*.mp4
+*.avi
+
+# Claude
+.claude/
