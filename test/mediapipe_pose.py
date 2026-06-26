@@ -2,13 +2,11 @@ import cv2
 import numpy as np
 import urllib.request
 import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+from mediapipe import Image
 import time
 import sys
-
-# MediaPipe 姿势检测
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
 
 # 获取 Windows IP
 def get_windows_ip():
@@ -48,6 +46,37 @@ def send_image(url, img):
         print(f"发送失败: {e}")
         return False
 
+def draw_landmarks_on_image(image, detection_result):
+    """在图片上绘制骨架"""
+    pose_landmarks_list = detection_result.pose_landmarks
+
+    for pose_landmarks in pose_landmarks_list:
+        # 绘制连接线
+        connections = mp.solutions.pose.POSE_CONNECTIONS
+        for connection in connections:
+            start_idx = connection[0]
+            end_idx = connection[1]
+
+            start_landmark = pose_landmarks[start_idx]
+            end_landmark = pose_landmarks[end_idx]
+
+            h, w, _ = image.shape
+            start_x = int(start_landmark.x * w)
+            start_y = int(start_landmark.y * h)
+            end_x = int(end_landmark.x * w)
+            end_y = int(end_landmark.y * h)
+
+            cv2.line(image, (start_x, start_y), (end_x, end_y), (0, 255, 0), 2)
+
+        # 绘制关键点
+        for idx, landmark in enumerate(pose_landmarks):
+            h, w, _ = image.shape
+            x = int(landmark.x * w)
+            y = int(landmark.y * h)
+            cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
+
+    return image
+
 def main():
     windows_ip = get_windows_ip()
     print(f"Windows IP: {windows_ip}")
@@ -61,71 +90,86 @@ def main():
     print(f"发送结果: {send_url}")
     print("=" * 50)
 
-    # 初始化 MediaPipe Pose
-    with mp_pose.Pose(
-        model_complexity=1,           # 0, 1, 2 (越小越快)
-        smooth_landmarks=True,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5
-    ) as pose:
+    # 下载模型文件（如果不存在）
+    model_path = "pose_landmarker.task"
+    import os
+    if not os.path.exists(model_path):
+        print(f"下载模型文件: {model_path}")
+        import urllib.request
+        url = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker/float16/1/pose_landmarker.task"
+        urllib.request.urlretrieve(url, model_path)
+        print("模型下载完成")
 
-        print("MediaPipe Pose 已初始化")
-        print("开始循环处理...")
+    # 初始化 PoseLandmarker
+    base_options = python.BaseOptions(model_asset_path=model_path)
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        running_mode=vision.RunningMode.VIDEO,
+        min_pose_detection_confidence=0.5,
+        min_pose_presence_confidence=0.5,
+        min_tracking_confidence=0.5,
+        num_poses=1
+    )
 
-        frame_count = 0
-        start_time = time.time()
+    landmarker = vision.PoseLandmarker.create_from_options(options)
 
-        while True:
-            try:
-                # 获取图片
-                img = fetch_image(fetch_url)
-                if img is None:
-                    time.sleep(0.1)
-                    continue
+    print("MediaPipe PoseLandmarker 已初始化")
+    print("开始循环处理...")
 
-                h, w = img.shape[:2]
+    frame_count = 0
+    start_time = time.time()
 
-                # 第一帧打印尺寸
-                if frame_count == 0:
-                    print(f"图片尺寸: {w}x{h}")
-
-                # BGR 转 RGB
-                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-                # MediaPipe 处理
-                results = pose.process(img_rgb)
-
-                # 绘制骨架
-                img_output = img.copy()
-                if results.pose_landmarks:
-                    mp_drawing.draw_landmarks(
-                        img_output,
-                        results.pose_landmarks,
-                        mp_pose.POSE_CONNECTIONS,
-                        landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style()
-                    )
-
-                    # 打印关键点信息（可选）
-                    if frame_count == 0:
-                        landmarks = results.pose_landmarks.landmark
-                        print(f"检测到 {len(landmarks)} 个关键点")
-
-                # 发送结果
-                send_image(send_url, img_output)
-
-                frame_count += 1
-                if frame_count % 30 == 0:
-                    elapsed = time.time() - start_time
-                    fps = frame_count / elapsed
-                    print(f"已处理 {frame_count} 帧, FPS: {fps:.1f}")
-
-            except KeyboardInterrupt:
-                print("\n已停止")
-                break
-            except Exception as e:
-                print(f"错误: {e}")
+    while True:
+        try:
+            # 获取图片
+            img = fetch_image(fetch_url)
+            if img is None:
                 time.sleep(0.1)
+                continue
 
+            h, w = img.shape[:2]
+
+            # 第一帧打印尺寸
+            if frame_count == 0:
+                print(f"图片尺寸: {w}x{h}")
+
+            # BGR 转 RGB
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            # 创建 MediaPipe Image
+            mp_image = Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
+
+            # MediaPipe 处理
+            timestamp = int(time.time() * 1000)
+            detection_result = landmarker.detect_for_video(mp_image, timestamp)
+
+            # 绘制骨架
+            img_output = img.copy()
+            if detection_result.pose_landmarks:
+                img_output = draw_landmarks_on_image(img_output, detection_result)
+
+                # 打印关键点信息（可选）
+                if frame_count == 0:
+                    landmarks = detection_result.pose_landmarks[0]
+                    print(f"检测到 {len(landmarks)} 个关键点")
+
+            # 发送结果
+            send_image(send_url, img_output)
+
+            frame_count += 1
+            if frame_count % 30 == 0:
+                elapsed = time.time() - start_time
+                fps = frame_count / elapsed
+                print(f"已处理 {frame_count} 帧, FPS: {fps:.1f}")
+
+        except KeyboardInterrupt:
+            print("\n已停止")
+            break
+        except Exception as e:
+            print(f"错误: {e}")
+            time.sleep(0.1)
+
+    landmarker.close()
     return 0
 
 if __name__ == '__main__':
