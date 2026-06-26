@@ -45,5 +45,10 @@ Thumbs.db
 *.mp4
 *.avi
 
+# Model files
+*.task
+*.tflite
+*.onnx
+
 # Claude
 .claude/
