@@ -50,17 +50,35 @@ def draw_landmarks_on_image(image, detection_result):
     """在图片上绘制骨架"""
     pose_landmarks_list = detection_result.pose_landmarks
 
+    # MediaPipe Pose 33 个关键点的连接关系
+    POSE_CONNECTIONS = [
+        (0, 1), (1, 2), (2, 3), (3, 7),  # 头部
+        (0, 4), (4, 5), (5, 6), (6, 8),  # 头部
+        (9, 10),  # 嘴巴
+        (11, 12),  # 肩膀
+        (11, 13), (13, 15),  # 左臂
+        (12, 14), (14, 16),  # 右臂
+        (15, 17), (15, 19), (15, 21),  # 左手
+        (16, 18), (16, 20), (16, 22),  # 右手
+        (11, 23), (12, 24),  # 躯干
+        (23, 24),  # 臀部
+        (23, 25), (25, 27),  # 左腿
+        (24, 26), (26, 28),  # 右腿
+        (27, 29), (27, 31),  # 左脚
+        (28, 30), (28, 32),  # 右脚
+    ]
+
     for pose_landmarks in pose_landmarks_list:
+        h, w, _ = image.shape
+
         # 绘制连接线
-        connections = mp.solutions.pose.POSE_CONNECTIONS
-        for connection in connections:
+        for connection in POSE_CONNECTIONS:
             start_idx = connection[0]
             end_idx = connection[1]
 
             start_landmark = pose_landmarks[start_idx]
             end_landmark = pose_landmarks[end_idx]
 
-            h, w, _ = image.shape
             start_x = int(start_landmark.x * w)
             start_y = int(start_landmark.y * h)
             end_x = int(end_landmark.x * w)
@@ -70,7 +88,6 @@ def draw_landmarks_on_image(image, detection_result):
 
         # 绘制关键点
         for idx, landmark in enumerate(pose_landmarks):
-            h, w, _ = image.shape
             x = int(landmark.x * w)
             y = int(landmark.y * h)
             cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
