@@ -12,6 +12,7 @@
 │   ├── cuda_edge.cu           # CUDA 边缘检测 kernel
 │   ├── libcuda_edge.so        # 编译好的 CUDA 库
 │   ├── cuda_edge_processor.py # Python 调用 CUDA 处理
+│   ├── mediapipe_pose.py      # MediaPipe 人体姿势识别
 │   ├── cam_client.py          # 摄像头客户端
 │   ├── cuda_test.cu           # CUDA 基础测试
 │   └── build.sh               # CUDA 编译脚本
@@ -58,7 +59,19 @@ bash build.sh
 python3 cuda_edge_processor.py
 ```
 
-### 3. 摄像头服务
+### 3. MediaPipe 人体姿势识别
+
+- **模型**: MediaPipe Pose (33 个关键点)
+- **功能**: 实时人体骨架检测和绘制
+- **性能**: 30+ FPS
+
+**运行**:
+```bash
+cd test
+python3 mediapipe_pose.py
+```
+
+### 4. 摄像头服务
 
 - **Windows 端**: `H:\video_scripts\cam_server.py`
 - **功能**: USB 摄像头采集 + OpenCV 显示
@@ -78,6 +91,7 @@ python cam_server.py
 - CUDA 13.3
 - clangd (代码跳转)
 - Python3 + OpenCV
+- MediaPipe 0.10.35
 
 ### VSCode 配置
 
@@ -98,4 +112,4 @@ python cam_server.py
 - CUDA 13.3
 - Python 3.x
 - OpenCV (Python)
-- MediaPipe (计划中)
+- MediaPipe 0.10.35
