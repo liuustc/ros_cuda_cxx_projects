@@ -91,12 +91,13 @@ def main():
     print("=" * 50)
 
     # 下载模型文件（如果不存在）
-    model_path = "pose_landmarker.task"
+    model_path = "pose_landmarker_heavy.task"
     import os
     if not os.path.exists(model_path):
         print(f"下载模型文件: {model_path}")
         import urllib.request
-        url = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker/float16/1/pose_landmarker.task"
+        # 使用 heavy 版本，精度更高
+        url = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
         urllib.request.urlretrieve(url, model_path)
         print("模型下载完成")
 
