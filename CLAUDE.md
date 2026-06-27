@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WSL2 (Ubuntu 24.04) 开发环境，包含 ROS2、CUDA、MediaPipe 等工具链，支持摄像头实时处理和人体姿势识别。
 
+## 目录结构
+
+```
+.
+├── ros2_demo/          # ROS2 Jazzy 示例项目
+│   └── src/talker_listener/  # Talker-Listener 通信示例
+├── cuda_demo/          # CUDA 和 MediaPipe 示例
+│   ├── cuda_edge.cu           # CUDA 边缘检测 kernel
+│   ├── cuda_edge_processor.py # Python 调用 CUDA 处理
+│   ├── mediapipe_pose.py      # MediaPipe 人体姿势识别
+│   └── build.sh               # CUDA 编译脚本
+└── CLAUDE.md           # 本文件
+```
+
 ## 核心架构
 
 ### 1. ROS2 Demo (ros2_demo/)
