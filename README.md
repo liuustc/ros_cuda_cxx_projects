@@ -8,7 +8,7 @@
 .
 ├── ros2_demo/          # ROS2 Jazzy 示例项目
 │   └── src/talker_listener/  # Talker-Listener 通信示例
-├── test/               # 测试和工具集合
+├── cuda_demo/          # CUDA 和 MediaPipe 示例
 │   ├── cuda_edge.cu           # CUDA 边缘检测 kernel
 │   ├── libcuda_edge.so        # 编译好的 CUDA 库
 │   ├── cuda_edge_processor.py # Python 调用 CUDA 处理
@@ -50,7 +50,7 @@ ros2 run talker_listener talker
 
 **编译**:
 ```bash
-cd test
+cd cuda_demo
 bash build.sh
 ```
 
@@ -68,7 +68,7 @@ python3 cuda_edge_processor.py
 
 **运行**:
 ```bash
-cd test
+cd cuda_demo
 python3 mediapipe_pose.py
 ```
 

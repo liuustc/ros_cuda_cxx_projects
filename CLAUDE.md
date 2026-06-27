@@ -30,7 +30,7 @@ ros2 run talker_listener listener
 ros2 run talker_listener talker
 ```
 
-### 2. CUDA 边缘检测 (test/)
+### 2. CUDA 边缘检测 (cuda_demo/)
 
 Sobel 边缘检测 CUDA 实现，支持实时视频流处理。
 
@@ -41,7 +41,7 @@ Sobel 边缘检测 CUDA 实现，支持实时视频流处理。
 
 **编译**：
 ```bash
-cd test
+cd cuda_demo
 bash build.sh
 ```
 
@@ -50,7 +50,7 @@ bash build.sh
 python3 cuda_edge_processor.py
 ```
 
-### 3. MediaPipe 人体姿势识别 (test/)
+### 3. MediaPipe 人体姿势识别 (cuda_demo/)
 
 基于 MediaPipe PoseLandmarker 的实时人体骨架检测。
 
@@ -60,7 +60,7 @@ python3 cuda_edge_processor.py
 
 **运行**：
 ```bash
-cd test
+cd cuda_demo
 python3 mediapipe_pose.py
 ```
 
@@ -76,7 +76,7 @@ Windows (cam_server.py)  ←HTTP→  WSL (处理脚本)
 ```
 
 **Windows 端**：`H:\video_scripts\cam_server.py`
-**WSL 端**：`test/cuda_edge_processor.py` 或 `test/mediapipe_pose.py`
+**WSL 端**：`cuda_demo/cuda_edge_processor.py` 或 `cuda_demo/mediapipe_pose.py`
 
 ## 环境配置
 

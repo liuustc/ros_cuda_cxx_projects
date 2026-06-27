@@ -3,7 +3,7 @@
 *.so
 *.a
 *.exe
-test/cuda_test
+cuda_demo/cuda_test
 
 # Python
 __pycache__/
