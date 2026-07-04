@@ -86,7 +86,7 @@ void TaskRunner::real_run() {
         std::string work_name = task_info->param().work_name;
         if (!runner_state_->set_running(work_name)) {
             // 该work正在运行，跳过任务
-            frame->task_finish(id_, task_info->param().name, false);
+            frame->task_finish(task_info->param().runner_id, task_info->param().name, false);
             busy_ = false;
             if (callback_) callback_();
             continue;
@@ -96,7 +96,7 @@ void TaskRunner::real_run() {
         bool success = task->proc(frame);
         
         // 任务完成
-        frame->task_finish(id_, task_info->param().name, success);
+        frame->task_finish(task_info->param().runner_id, task_info->param().name, success);
         
         // 重置运行状态
         runner_state_->set_not_running();
