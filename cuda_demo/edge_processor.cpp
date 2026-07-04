@@ -6,7 +6,7 @@
 #include <string>
 
 // CUDA 函数声明
-extern "C" int process_image(unsigned char* h_input, unsigned char* h_output,
+extern "C" int cuda_edge_detect(unsigned char* h_input, unsigned char* h_output,
                               int width, int height, int channels);
 
 // libcurl 回调：写入内存
@@ -36,6 +36,32 @@ static size_t write_callback(void* contents, size_t size, size_t nmemb, void* us
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+// stb 写入回调：收集数据到内存
+struct StbMemoryBlock {
+    unsigned char* data;
+    size_t size;
+    size_t capacity;
+};
+
+static void stb_write_callback(void *context, void *data, int size) {
+    StbMemoryBlock *mem = (StbMemoryBlock*)context;
+    size_t new_size = mem->size + size;
+    
+    if (new_size > mem->capacity) {
+        size_t new_capacity = mem->capacity ? mem->capacity * 2 : 1024;
+        while (new_capacity < new_size) new_capacity *= 2;
+        
+        unsigned char* ptr = (unsigned char*)realloc(mem->data, new_capacity);
+        if (!ptr) return;
+        
+        mem->data = ptr;
+        mem->capacity = new_capacity;
+    }
+    
+    memcpy(mem->data + mem->size, data, size);
+    mem->size = new_size;
+}
 
 // 从 HTTP 获取图片
 bool fetch_image(const char* url, std::vector<unsigned char>& buffer) {
@@ -117,12 +143,20 @@ int main(int argc, char* argv[]) {
 
     // CUDA 处理
     printf("CUDA 边缘提取...\n");
-    process_image(image, edge_data, width, height, channels);
+    cuda_edge_detect(image, edge_data, width, height, channels);
 
     // 编码为 JPEG
-    int out_size;
-    unsigned char* out_jpeg = stbi_write_jpg_to_func_get_data(edge_data, width, height,
-                                                                1, 80, &out_size);
+    StbMemoryBlock out_mem = {nullptr, 0, 0};
+    int success = stbi_write_jpg_to_func(stb_write_callback, &out_mem, 
+                                         width, height, 1, edge_data, 80);
+    if (!success) {
+        fprintf(stderr, "JPEG 编码失败!\n");
+        stbi_image_free(image);
+        free(edge_data);
+        return 1;
+    }
+    unsigned char* out_jpeg = out_mem.data;
+    size_t out_size = out_mem.size;
 
     // 发送结果
     printf("发送结果到 Windows...\n");

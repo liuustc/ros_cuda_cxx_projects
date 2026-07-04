@@ -22,6 +22,7 @@ ros2_demo/log/
 # Third-party headers
 stb_image.h
 stb_image_write.h
+stb/
 
 # CUDA
 *.cubin
