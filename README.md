@@ -1,34 +1,115 @@
-# WSL2 开发环境
+# ROS / CUDA / C++ Projects
 
-本项目包含在 WSL2 (Ubuntu 24.04) 中配置的各种开发环境和工具。
+WSL2 (Ubuntu 24.04) 开发环境，包含 ROS2、CUDA、MediaPipe、调度器框架等项目。
 
 ## 目录结构
 
 ```
 .
-├── ros2_demo/          # ROS2 Jazzy 示例项目
-│   └── src/talker_listener/  # Talker-Listener 通信示例
-├── cuda_demo/          # CUDA 和 MediaPipe 示例
-│   ├── cuda_edge.cu           # CUDA 边缘检测 kernel
-│   ├── libcuda_edge.so        # 编译好的 CUDA 库
-│   ├── cuda_edge_processor.py # Python 调用 CUDA 处理
-│   ├── mediapipe_pose.py      # MediaPipe 人体姿势识别
-│   ├── cam_client.py          # 摄像头客户端
-│   ├── cuda_test.cu           # CUDA 基础测试
-│   └── build.sh               # CUDA 编译脚本
+├── ros2_demo/                    # ROS2 Jazzy 示例项目
+│   ├── src/talker_listener/      # Talker-Listener 通信示例
+│   └── src/scheduler/            # 声明式 DAG 调度器框架
+│       ├── include/scheduler/    # 公共头文件
+│       ├── src/                  # 实现
+│       └── test/                 # 测试用例
+├── cuda_demo/                    # CUDA 和视觉处理示例
+│   ├── cuda_edge.cu              # CUDA Sobel 边缘检测 kernel
+│   ├── cuda_edge_processor.py    # Python 调用 CUDA 处理
+│   ├── edge_processor.cpp        # C++ 边缘处理（HTTP + CUDA）
+│   ├── image_viewer.cpp          # 图片对比查看器（OpenCV）
+│   ├── mediapipe_pose.py         # MediaPipe 人体姿势识别
+│   ├── cam_client.py             # 摄像头客户端
+│   ├── CMakeLists.txt            # CMake 构建配置
+│   └── build.sh                  # 一键编译脚本
+├── CLAUDE.md                     # Claude Code 指导文件
 └── README.md
 ```
 
 ## 功能模块
 
-### 1. ROS2 Demo
+### 1. 调度器框架 (ros2_demo/src/scheduler/)
 
-- **ROS2 版本**: Jazzy (Ubuntu 24.04)
-- **功能**: 两个 Node 互相发送消息
-- **Talker**: 发送消息到 `chatter` topic
-- **Listener**: 接收消息并回复到 `reply` topic
+声明式 DAG 调度器，参考自动驾驶感知流水线设计。
 
-**编译和运行**:
+**核心特性**：
+- 声明式 DAG：通过 TaskParam 声明任务依赖（depend_tasks/after_tasks）
+- 中心化事件驱动 tick：TriggerScheduler 单线程决策，避免并发竞态
+- 多 Runner 并行：绑核专属线程，跨帧 work 互斥
+- 分层守卫：消息对齐 → 帧间仲裁 → 帧内依赖 → 硬件重入
+
+**架构**：
+```
+SchedulerManager → Scheduler → FrameBuffer → Frame → TaskInfo → Task → TaskRunner
+```
+
+**依赖**：
+```bash
+sudo apt install libcurl4-openssl-dev libopencv-dev
+```
+
+**编译和测试**：
+```bash
+cd ros2_demo/src/scheduler
+./build.sh
+
+# 或手动
+mkdir build && cd build
+cmake ..
+cmake --build .
+./scheduler_tests
+```
+
+**测试覆盖（25个用例）**：任务状态转换、DAG 依赖链、失败传播、多 Runner 并行、帧间仲裁、Topic 路由、回调闭环等。
+
+### 2. CUDA 边缘检测 (cuda_demo/)
+
+Sobel 边缘检测 CUDA 实现，支持实时视频流处理。
+
+**编译**：
+```bash
+cd cuda_demo
+bash build.sh
+```
+
+**运行**：
+```bash
+python3 cuda_edge_processor.py
+```
+
+### 3. 图片对比查看器 (cuda_demo/image_viewer.cpp)
+
+遍历目录中的图片，左右并排显示原图和 CUDA 边缘检测结果。
+
+**编译**：
+```bash
+cd cuda_demo
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
+
+**运行**：
+```bash
+./image_viewer /path/to/images
+```
+
+**操作**：任意键切换下一张，ESC 退出。
+
+### 4. MediaPipe 人体姿势识别 (cuda_demo/)
+
+基于 MediaPipe PoseLandmarker 的实时人体骨架检测。
+
+**运行**：
+```bash
+cd cuda_demo
+python3 mediapipe_pose.py
+```
+
+### 5. ROS2 Talker-Listener (ros2_demo/)
+
+ROS2 Jazzy 的节点通信示例。
+
+**编译和运行**：
 ```bash
 cd ros2_demo
 source /opt/ros/jazzy/setup.bash
@@ -42,75 +123,10 @@ ros2 run talker_listener listener
 ros2 run talker_listener talker
 ```
 
-### 2. CUDA 边缘检测
+## 环境
 
-- **GPU**: NVIDIA GeForce RTX 5070 Ti
-- **CUDA**: 13.3
-- **功能**: Sobel 边缘检测，支持实时视频流处理
-
-**编译**:
-```bash
-cd cuda_demo
-bash build.sh
-```
-
-**运行**:
-```bash
-python3 cuda_edge_processor.py
-```
-
-### 3. MediaPipe 人体姿势识别
-
-- **模型**: MediaPipe PoseLandmarker (33 个关键点)
-- **功能**: 实时人体骨架检测和绘制
-- **性能**: 30+ FPS
-- **模型文件**: 首次运行自动下载 `pose_landmarker.task`
-
-**运行**:
-```bash
-cd cuda_demo
-python3 mediapipe_pose.py
-```
-
-### 4. 摄像头服务
-
-- **Windows 端**: `H:\video_scripts\cam_server.py`
-- **功能**: USB 摄像头采集 + OpenCV 显示
-- **通信**: HTTP 协议
-
-**Windows 端启动**:
-```powershell
-cd H:\video_scripts
-python cam_server.py
-```
-
-## 环境配置
-
-### 已安装软件
-
-- ROS2 Jazzy
-- CUDA 13.3
-- clangd (代码跳转)
-- Python3 + OpenCV
-- MediaPipe 0.10.35
-
-### VSCode 配置
-
-- 使用 clangd 进行代码跳转
-- 支持 compile_commands.json
-- SSH 免密登录 WSL
-
-## 使用说明
-
-1. **ROS2 开发**: 使用 `colcon build` 编译，支持 `ros2 run` 命令
-2. **CUDA 开发**: 使用 `nvcc` 编译，支持 Python ctypes 调用
-3. **摄像头测试**: Windows 启动服务，WSL 调用处理
-
-## 依赖
-
-- Ubuntu 24.04 (WSL2)
-- ROS2 Jazzy
-- CUDA 13.3
-- Python 3.x
-- OpenCV (Python)
-- MediaPipe 0.10.35
+- **OS**: Ubuntu 24.04 (WSL2)
+- **CUDA**: 13.3 (RTX 5070 Ti)
+- **ROS2**: Jazzy
+- **Python**: 3.12
+- **MediaPipe**: 0.10.35
