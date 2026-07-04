@@ -35,6 +35,8 @@ stb/
 *.swp
 *.swo
 *~
+.clangd
+compile_commands.json
 
 # OS
 .DS_Store
