@@ -134,6 +134,14 @@ public:
     // 处理完成的任务缓存（公开接口，供 FrameBuffer 调用）
     void process_completions();
     
+    // 消费已完成任务计数
+    uint64_t consume_completed_tasks() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        uint64_t c = completed_tasks_count_;
+        completed_tasks_count_ = 0;
+        return c;
+    }
+    
     // 检查所有任务是否完成
     bool all_tasks_done() const;
     
@@ -172,6 +180,9 @@ private:
     
     // 任务状态缓存（用于批量更新）
     std::map<int, bool> cache_finish_runner_id_;
+    
+    // 已完成任务计数
+    uint64_t completed_tasks_count_ = 0;
     
     // 处理完成的任务（调用时需持有mutex_）
     void process_finish_tasks_unlocked();

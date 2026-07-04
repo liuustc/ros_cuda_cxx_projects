@@ -114,8 +114,7 @@ void TaskRunner::bind_cpu() {
     CPU_ZERO(&cpuset);
     CPU_SET(cpu_id_, &cpuset);
     
-    pthread_t thread = thread_.native_handle();
-    int result = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+    int result = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     
     if (result != 0) {
         std::cerr << "Failed to bind thread to CPU " << cpu_id_ << std::endl;

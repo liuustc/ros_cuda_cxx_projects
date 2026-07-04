@@ -59,13 +59,19 @@ FrameBuffer::get_ready_tasks() {
     // 第一步：处理所有运行帧的任务完成缓存
     for (auto& frame : running_frames_) {
         frame->process_completions();
+        completed_tasks_ += frame->consume_completed_tasks();
     }
     
     // 第二步：清理已完成的运行帧
+    auto before_size = running_frames_.size();
     running_frames_.erase(
         std::remove_if(running_frames_.begin(), running_frames_.end(),
-                      [](const std::shared_ptr<Frame>& frame) {
-                          return frame->all_tasks_done();
+                      [this](const std::shared_ptr<Frame>& frame) {
+                          if (frame->all_tasks_done()) {
+                              completed_frames_++;
+                              return true;
+                          }
+                          return false;
                       }),
         running_frames_.end()
     );
@@ -96,6 +102,7 @@ void FrameBuffer::cleanup_timeout_frames(uint64_t current_time, uint64_t timeout
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 清理缓存超时帧
+    auto before = cache_frames_.size();
     cache_frames_.erase(
         std::remove_if(cache_frames_.begin(), cache_frames_.end(),
                       [current_time, timeout_ms](const std::shared_ptr<Frame>& frame) {
@@ -103,12 +110,18 @@ void FrameBuffer::cleanup_timeout_frames(uint64_t current_time, uint64_t timeout
                       }),
         cache_frames_.end()
     );
+    dropped_frames_ += (before - cache_frames_.size());
     
     // 清理运行超时帧
+    before = running_frames_.size();
     running_frames_.erase(
         std::remove_if(running_frames_.begin(), running_frames_.end(),
-                      [current_time, timeout_ms](const std::shared_ptr<Frame>& frame) {
-                          return (current_time - frame->timestamp()) > timeout_ms;
+                      [current_time, timeout_ms, this](const std::shared_ptr<Frame>& frame) {
+                          if ((current_time - frame->timestamp()) > timeout_ms) {
+                              dropped_frames_++;
+                              return true;
+                          }
+                          return false;
                       }),
         running_frames_.end()
     );
@@ -122,6 +135,18 @@ size_t FrameBuffer::cache_size() const {
 size_t FrameBuffer::running_size() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return running_frames_.size();
+}
+
+FrameBuffer::Counters FrameBuffer::consume_counters() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    Counters c;
+    c.completed_frames = completed_frames_;
+    c.completed_tasks = completed_tasks_;
+    c.dropped_frames = dropped_frames_;
+    completed_frames_ = 0;
+    completed_tasks_ = 0;
+    dropped_frames_ = 0;
+    return c;
 }
 
 bool FrameBuffer::check_step_arbitration(std::shared_ptr<Frame> frame) const {
@@ -177,6 +202,10 @@ void Scheduler::insert_message(const std::string& topic, uint64_t timestamp,
     // 创建帧
     auto frame = create_frame(timestamp);
     
+    // 将消息数据写入帧
+    frame->data().insert("topic", topic);
+    frame->data().insert("input", data);
+    
     // 构建任务列表
     construct_frame_task_list(frame);
     
@@ -185,7 +214,7 @@ void Scheduler::insert_message(const std::string& topic, uint64_t timestamp,
     
     // 更新统计
     {
-        std::lock_guard<std::mutex> lock(stats_mutex_);
+        std::lock_guard<std::mutex> stats_lock(stats_mutex_);
         stats_.total_frames++;
     }
     
@@ -207,10 +236,14 @@ void Scheduler::trigger_scheduler() {
         dispatch_tasks(ready_tasks);
     }
     
-    // 更新统计：计算已完成的帧数
+    // 消费 FrameBuffer 计数器，更新统计
+    auto counters = frame_buffer_->consume_counters();
     {
-        std::lock_guard<std::mutex> lock(stats_mutex_);
+        std::lock_guard<std::mutex> stats_lock(stats_mutex_);
         stats_.total_tasks += ready_tasks.size();
+        stats_.completed_tasks += counters.completed_tasks;
+        stats_.completed_frames += counters.completed_frames;
+        stats_.dropped_frames += counters.dropped_frames;
     }
 }
 

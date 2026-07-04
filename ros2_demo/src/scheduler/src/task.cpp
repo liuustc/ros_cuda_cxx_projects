@@ -12,8 +12,13 @@ TaskInfo::TaskInfo(const TaskParam& param) : param_(param) {
 bool TaskInfo::check_depend_tasks() const {
     for (const auto& weak_task : depend_tasks_) {
         auto task = weak_task.lock();
-        if (!task || task->status() != TaskStatus::DONE) {
-            return false;
+        if (!task) continue;  // 任务已析构，视为满足
+        if (task->status() == TaskStatus::FAILED || 
+            task->status() == TaskStatus::SKIPPED) {
+            return false;  // 上游失败，下游应跳过
+        }
+        if (task->status() != TaskStatus::DONE) {
+            return false;  // 未完成
         }
     }
     return true;
@@ -22,11 +27,12 @@ bool TaskInfo::check_depend_tasks() const {
 bool TaskInfo::check_after_tasks() const {
     for (const auto& weak_task : after_tasks_) {
         auto task = weak_task.lock();
-        if (!task || task->status() == TaskStatus::DONE) {
-            return true;  // 至少一个after任务完成
+        if (!task) continue;  // 任务已析构，视为满足
+        if (task->status() != TaskStatus::DONE) {
+            return false;  // 还有未完成的 after_task
         }
     }
-    return after_tasks_.empty();  // 如果没有after任务，返回true
+    return true;  // 所有 after_task 都已完成（或已失效）
 }
 
 bool TaskInfo::check_input_ready() const {

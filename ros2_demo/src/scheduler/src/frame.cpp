@@ -42,8 +42,25 @@ std::vector<std::shared_ptr<TaskInfo>> Frame::get_ready_tasks() {
         
         // 检查依赖
         if (task->status() == TaskStatus::WAITING) {
-            // 检查强依赖
+            // 检查强依赖（失败则跳过当前任务）
             if (!task->check_depend_tasks()) {
+                // 检查是否有依赖任务 FAILED/SKIPPED
+                bool dep_failed = false;
+                for (const auto& dep_name : task->param().depend_tasks) {
+                    // 遍历 all_tasks_ 查找依赖状态
+                    for (const auto& t : all_tasks_) {
+                        if (t->param().name == dep_name && 
+                            (t->status() == TaskStatus::FAILED || 
+                             t->status() == TaskStatus::SKIPPED)) {
+                            dep_failed = true;
+                            break;
+                        }
+                    }
+                    if (dep_failed) break;
+                }
+                if (dep_failed) {
+                    task->skip();  // 上游失败，跳过当前任务
+                }
                 continue;
             }
             
@@ -122,6 +139,7 @@ void Frame::process_finish_tasks_unlocked() {
         } else {
             task->set_status(TaskStatus::FAILED);
         }
+        completed_tasks_count_++;
         
         // 弹出队首任务
         manager->pop_front();

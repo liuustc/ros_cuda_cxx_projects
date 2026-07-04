@@ -50,6 +50,14 @@ public:
     
     // 获取运行帧数量
     size_t running_size() const;
+    
+    // 消费计数器（读取并重置）
+    struct Counters {
+        uint64_t completed_frames = 0;
+        uint64_t completed_tasks = 0;
+        uint64_t dropped_frames = 0;
+    };
+    Counters consume_counters();
 
 private:
     int max_running_frames_;
@@ -58,6 +66,11 @@ private:
     mutable std::mutex mutex_;
     std::vector<std::shared_ptr<Frame>> cache_frames_;
     std::vector<std::shared_ptr<Frame>> running_frames_;
+    
+    // 计数器
+    uint64_t completed_frames_ = 0;
+    uint64_t completed_tasks_ = 0;
+    uint64_t dropped_frames_ = 0;
     
     // 跨帧仲裁：step检查
     bool check_step_arbitration(std::shared_ptr<Frame> frame) const;
