@@ -60,6 +60,14 @@ std::vector<std::shared_ptr<TaskInfo>> Frame::get_ready_tasks() {
                 }
                 if (dep_failed) {
                     task->skip();  // 上游失败，跳过当前任务
+                    manager->pop_front();  // 从队列移除，让下一个任务有机会执行
+                    // 将下一个任务设为 WAITING
+                    if (!manager->empty()) {
+                        auto next = manager->front();
+                        if (next && next->status() == TaskStatus::INIT) {
+                            next->set_status(TaskStatus::WAITING);
+                        }
+                    }
                 }
                 continue;
             }

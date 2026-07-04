@@ -47,6 +47,7 @@ void FrameBuffer::insert_frame(std::shared_ptr<Frame> frame) {
     while (cache_frames_.size() > max_cache_frames_) {
         cache_frames_.front()->set_status(FrameStatus::TIMEOUT);
         cache_frames_.erase(cache_frames_.begin());
+        dropped_frames_++;
     }
 }
 
