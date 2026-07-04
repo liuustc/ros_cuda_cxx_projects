@@ -72,8 +72,16 @@ private:
     uint64_t completed_tasks_ = 0;
     uint64_t dropped_frames_ = 0;
     
+    // 超时清理频率控制
+    uint64_t tick_count_ = 0;
+    static constexpr uint64_t CLEANUP_INTERVAL = 100;  // 每100次tick清理一次
+    static constexpr uint64_t DEFAULT_TIMEOUT_MS = 5000; // 默认5秒超时
+    
     // 跨帧仲裁：step检查
     bool check_step_arbitration(std::shared_ptr<Frame> frame) const;
+    
+    // 超时清理（调用时需持有mutex_）
+    void cleanup_timeout_frames_unlocked(uint64_t current_time, uint64_t timeout_ms);
 };
 
 // 调度器（单条流水线）

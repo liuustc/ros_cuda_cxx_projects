@@ -108,27 +108,22 @@ bool Frame::all_tasks_done() const {
     
     for (const auto& task : all_tasks_) {
         if (task->status() != TaskStatus::DONE && 
-            task->status() != TaskStatus::SKIPPED) {
+            task->status() != TaskStatus::SKIPPED &&
+            task->status() != TaskStatus::FAILED) {
             return false;
         }
     }
     return true;
 }
 
-void Frame::set_task_running(int runner_id) {
+void Frame::set_task_running(std::shared_ptr<TaskInfo> task_info) {
+    if (!task_info) return;
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it = task_list_managers_.find(runner_id);
-    if (it != task_list_managers_.end()) {
-        auto task = it->second->front();
-        if (task) {
-            task->set_status(TaskStatus::RUNNING);
-        }
-    }
+    task_info->set_status(TaskStatus::RUNNING);
 }
 
-void Frame::set_async_task_running(int runner_id) {
-    // 简化实现：与set_task_running相同
-    set_task_running(runner_id);
+void Frame::set_async_task_running(std::shared_ptr<TaskInfo> task_info) {
+    set_task_running(task_info);
 }
 
 void Frame::process_finish_tasks_unlocked() {

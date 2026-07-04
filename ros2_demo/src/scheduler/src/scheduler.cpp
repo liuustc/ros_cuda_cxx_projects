@@ -55,6 +55,13 @@ std::vector<std::pair<std::shared_ptr<TaskInfo>, std::shared_ptr<Frame>>>
 FrameBuffer::get_ready_tasks() {
     std::lock_guard<std::mutex> lock(mutex_);
     
+    // 周期性清理超时帧
+    if (++tick_count_ >= CLEANUP_INTERVAL) {
+        tick_count_ = 0;
+        auto now = std::chrono::steady_clock::now().time_since_epoch().count() / 1000000;
+        cleanup_timeout_frames_unlocked(now, DEFAULT_TIMEOUT_MS);
+    }
+    
     std::vector<std::pair<std::shared_ptr<TaskInfo>, std::shared_ptr<Frame>>> ready_tasks;
     
     // 第一步：处理所有运行帧的任务完成缓存
@@ -64,7 +71,6 @@ FrameBuffer::get_ready_tasks() {
     }
     
     // 第二步：清理已完成的运行帧
-    auto before_size = running_frames_.size();
     running_frames_.erase(
         std::remove_if(running_frames_.begin(), running_frames_.end(),
                       [this](const std::shared_ptr<Frame>& frame) {
@@ -101,7 +107,10 @@ FrameBuffer::get_ready_tasks() {
 
 void FrameBuffer::cleanup_timeout_frames(uint64_t current_time, uint64_t timeout_ms) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+    cleanup_timeout_frames_unlocked(current_time, timeout_ms);
+}
+
+void FrameBuffer::cleanup_timeout_frames_unlocked(uint64_t current_time, uint64_t timeout_ms) {
     // 清理缓存超时帧
     auto before = cache_frames_.size();
     cache_frames_.erase(
@@ -114,7 +123,6 @@ void FrameBuffer::cleanup_timeout_frames(uint64_t current_time, uint64_t timeout
     dropped_frames_ += (before - cache_frames_.size());
     
     // 清理运行超时帧
-    before = running_frames_.size();
     running_frames_.erase(
         std::remove_if(running_frames_.begin(), running_frames_.end(),
                       [current_time, timeout_ms, this](const std::shared_ptr<Frame>& frame) {

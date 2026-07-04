@@ -80,7 +80,7 @@ void TaskRunner::real_run() {
         if (!task || !task_info || !frame) continue;
         
         // 设置任务运行状态
-        frame->set_task_running(id_);
+        frame->set_task_running(task_info);
         
         // 检查跨帧work互斥
         std::string work_name = task_info->param().work_name;

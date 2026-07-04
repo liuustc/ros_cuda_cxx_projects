@@ -149,9 +149,9 @@ public:
     int get_step() const { return step_; }
     void set_step(int step) { step_ = step; }
     
-    // 设置任务运行状态
-    void set_task_running(int runner_id);
-    void set_async_task_running(int runner_id);
+    // 设置任务运行状态（使用 task_info 自身的 runner_id，而非实际执行 runner 的 id）
+    void set_task_running(std::shared_ptr<TaskInfo> task_info);
+    void set_async_task_running(std::shared_ptr<TaskInfo> task_info);
     
     // 获取任务列表管理器
     TaskListManager* get_task_list_manager(int runner_id) {
