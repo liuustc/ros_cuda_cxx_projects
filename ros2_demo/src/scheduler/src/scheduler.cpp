@@ -96,7 +96,8 @@ FrameBuffer::get_ready_tasks() {
     for (auto& frame : running_frames_) {
         auto tasks = frame->get_ready_tasks();
         for (auto& task : tasks) {
-            if (check_step_arbitration(frame)) {
+            bool step_ok = check_step_arbitration(frame);
+            if (step_ok) {
                 ready_tasks.emplace_back(task, frame);
             }
         }
@@ -159,27 +160,20 @@ FrameBuffer::Counters FrameBuffer::consume_counters() {
 }
 
 bool FrameBuffer::check_step_arbitration(std::shared_ptr<Frame> frame) const {
-    // 帧间 step 仲裁：cur_frame.step < prev_frame.step 才放行
-    // running_frames_ 按到达顺序排列，frame[0] 最早
-    // 找到当前帧的前一帧，比较 step
-    
-    if (running_frames_.size() <= 1) return true;  // 只有一帧，无需仲裁
+    if (running_frames_.size() <= 1) return true;
     
     for (size_t i = 1; i < running_frames_.size(); i++) {
         if (running_frames_[i] == frame) {
-            // 当前帧是 frame[i]，前一帧是 frame[i-1]
             int cur_step = frame->get_current_step();
             int prev_step = running_frames_[i - 1]->get_current_step();
             
-            // 当前帧的 step 必须严格小于前一帧的 step
-            // 特殊情况：两帧都未开始（step = -1），允许执行
+            // 两帧都未开始（step = -1），允许执行
             if (cur_step == -1 && prev_step == -1) return true;
             
             return cur_step < prev_step;
         }
     }
     
-    // 帧不在 running_frames_ 中（可能是第一帧），允许执行
     return true;
 }
 

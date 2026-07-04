@@ -40,6 +40,12 @@ std::vector<std::shared_ptr<TaskInfo>> Frame::get_ready_tasks() {
             task->mark_checked();
         }
         
+        // 已经是 READY 的任务直接返回（上次未能 dispatch 的情况）
+        if (task->status() == TaskStatus::READY) {
+            ready_tasks.push_back(task);
+            continue;
+        }
+        
         // 检查依赖
         if (task->status() == TaskStatus::WAITING) {
             // 检查强依赖（失败则跳过当前任务）
