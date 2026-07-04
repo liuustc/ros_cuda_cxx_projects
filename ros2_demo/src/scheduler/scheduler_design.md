@@ -112,7 +112,6 @@ INIT → WAITING → READY → RUNNING → DONE
 
 ## 8. 已知限制（待实现）
 
-- `check_step_arbitration`: 跨帧 step 仲裁未实现
 - `wait_next_task`: 跨帧等待机制未实现
 - `check_input_ready`: 数据依赖检查未实现（当前等同于 check_depend_tasks）
 - `priority`: 优先级调度未实现（按注册顺序派发）

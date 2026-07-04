@@ -145,7 +145,10 @@ public:
     // 检查所有任务是否完成
     bool all_tasks_done() const;
     
-    // 获取步骤号（用于帧间仲裁）
+    // 获取当前完成的最大 step（用于帧间仲裁）
+    int get_current_step() const;
+    
+    // 设置步骤号（保留兼容）
     int get_step() const { return step_; }
     void set_step(int step) { step_ = step; }
     

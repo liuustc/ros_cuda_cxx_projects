@@ -116,6 +116,19 @@ bool Frame::all_tasks_done() const {
     return true;
 }
 
+int Frame::get_current_step() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    int max_step = -1;
+    for (const auto& task : all_tasks_) {
+        if (task->status() == TaskStatus::DONE || 
+            task->status() == TaskStatus::RUNNING) {
+            max_step = std::max(max_step, task->param().step);
+        }
+    }
+    return max_step;
+}
+
 void Frame::set_task_running(std::shared_ptr<TaskInfo> task_info) {
     if (!task_info) return;
     std::lock_guard<std::mutex> lock(mutex_);
