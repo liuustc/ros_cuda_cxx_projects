@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
-project(ros_cuda_projects LANGUAGES CXX CUDA)
+project(ros_cuda_projects LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ===== 选项 =====
@@ -10,8 +9,13 @@ option(BUILD_CUDA_DEMO "构建 cuda_demo 模块" ON)
 option(BUILD_SCHEDULER "构建 scheduler 模块" ON)
 option(BUILD_TALKER_LISTENER "构建 talker_listener 模块（需要 ROS2）" OFF)
 
+# ===== 测试 =====
+enable_testing()
+
 # ===== cuda_demo =====
 if(BUILD_CUDA_DEMO)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 17)
     add_subdirectory(cuda_demo)
 endif()
 

@@ -9,7 +9,8 @@
                 "-B", "build",
                 "-DBUILD_CUDA_DEMO=ON",
                 "-DBUILD_SCHEDULER=ON",
-                "-DBUILD_TALKER_LISTENER=ON"
+                "-DBUILD_TALKER_LISTENER=ON",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

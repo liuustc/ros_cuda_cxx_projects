@@ -8,7 +8,7 @@ set(CMAKE_CUDA_STANDARD 17)
 # 查找 CUDA 工具包
 find_package(CUDAToolkit REQUIRED)
 message(STATUS "CUDA 版本: ${CUDAToolkit_VERSION}")
-message(STATUS "CUDA 库: ${CUDAToolkit_CUDA_LIBRARY}")
+message(STATUS "CUDA 库目录: ${CUDAToolkit_LIBRARY_DIR}")
 
 # 选项：是否构建 edge_processor
 option(BUILD_EDGE_PROCESSOR "构建 edge_processor 可执行文件" ON)
@@ -17,16 +17,15 @@ option(BUILD_EDGE_PROCESSOR "构建 edge_processor 可执行文件" ON)
 if(BUILD_EDGE_PROCESSOR)
     find_package(CURL QUIET)
     if(NOT CURL_FOUND)
-        message(FATAL_ERROR "libcurl 未找到。\n"
-            "请安装 libcurl 开发包：\n"
-            "  Ubuntu/Debian: sudo apt install libcurl4-openssl-dev\n"
-            "  CentOS/RHEL: sudo yum install libcurl-devel\n"
-            "  或设置 -DBUILD_EDGE_PROCESSOR=OFF 跳过构建 edge_processor")
+        message(WARNING "libcurl 未找到，跳过 edge_processor。\n"
+            "  安装：sudo apt install libcurl4-openssl-dev\n"
+            "  或设置 -DBUILD_EDGE_PROCESSOR=OFF 消除此警告")
+        set(BUILD_EDGE_PROCESSOR OFF)
     endif()
 endif()
 
 # 设置 stb 头文件路径（假设 stb 仓库在 /home/liuhui/code/stb）
-set(STB_INCLUDE_DIR "/home/liuhui/code/stb")
+set(STB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/stb")
 if(NOT EXISTS "${STB_INCLUDE_DIR}/stb_image.h")
     message(FATAL_ERROR "stb_image.h 未找到。\n"
         "请确保 stb 仓库在 ${STB_INCLUDE_DIR} 目录下。\n"
@@ -69,24 +68,25 @@ option(BUILD_IMAGE_VIEWER "构建 image_viewer 图片查看器" ON)
 if(BUILD_IMAGE_VIEWER)
     find_package(OpenCV QUIET)
     if(NOT OpenCV_FOUND)
-        message(FATAL_ERROR "OpenCV 未找到。\n"
-            "请安装 OpenCV 开发包：\n"
-            "  Ubuntu/Debian: sudo apt install libopencv-dev\n"
-            "  CentOS/RHEL: sudo yum install opencv-devel\n"
-            "  或设置 -DBUILD_IMAGE_VIEWER=OFF 跳过构建 image_viewer")
+        message(WARNING "OpenCV 未找到，跳过 image_viewer。\n"
+            "  安装：sudo apt install libopencv-dev\n"
+            "  或设置 -DBUILD_IMAGE_VIEWER=OFF 消除此警告")
+        set(BUILD_IMAGE_VIEWER OFF)
     endif()
-    
-    # 编译 image_viewer
+endif()
+
+# 编译 image_viewer
+if(BUILD_IMAGE_VIEWER)
     add_executable(image_viewer image_viewer.cpp)
-    target_include_directories(image_viewer PRIVATE 
+    target_include_directories(image_viewer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${OpenCV_INCLUDE_DIRS}
     )
-    target_link_libraries(image_viewer 
-        cuda_edge 
+    target_link_libraries(image_viewer
+        cuda_edge
         ${OpenCV_LIBS}
     )
-    
+
     # 设置 RPATH
     set_target_properties(image_viewer PROPERTIES
         INSTALL_RPATH "$ORIGIN"

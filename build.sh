@@ -22,7 +22,7 @@ fi
 
 # 检测 ROS2 环境
 ROS2_AVAILABLE=0
-if [ -f /opt/ros/jazzy/setup.bash ]; then
+if source /opt/ros/jazzy/setup.bash 2>/dev/null && command -v ros2 &>/dev/null; then
     ROS2_AVAILABLE=1
 fi
 
@@ -36,7 +36,6 @@ CMAKE_ARGS=(
 )
 
 if [ "$ROS2_AVAILABLE" = "1" ]; then
-    source /opt/ros/jazzy/setup.bash
     CMAKE_ARGS+=(-DBUILD_TALKER_LISTENER=ON)
 fi
 

@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 3.8)
 project(talker_listener)
 
-# 生成 compile_commands.json，供 VSCode 等编辑器使用
+# 生成 compile_commands.json，供 VSCode 等编辑器使用（顶层已设置，此处防御性保留）
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
