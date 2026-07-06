@@ -93,7 +93,7 @@ fn change(s: &mut String) {
 pub fn slice_borrow() {
     println!("\n=== 切片借用 ===");
 
-    let s = String::from("hello world");
+    let mut s = String::from("hello world");
 
     // 字符串切片：借用字符串的一部分
     let hello = &s[0..5];
@@ -101,10 +101,31 @@ pub fn slice_borrow() {
     println!("{} {}", hello, world);
 
     // 简写语法
-    let hello2 = &s[..5];   // 从开头到索引5（不含）
-    let world2 = &s[6..];   // 从索引6到结尾
-    let whole = &s[..];     // 整个字符串
+    let hello2 = &s[..5]; // 从开头到索引5（不含）
+    let world2 = &s[6..]; // 从索引6到结尾
+    let whole = &s[..]; // 整个字符串
     println!("{} {} {}", hello2, world2, whole);
+
+    // 可变字符串切片：通过 &mut str 安全原地修改（make_ascii_uppercase 内部即逐字节改）
+    let borrow_mut_from_s: &mut str = &mut s[..5];
+    borrow_mut_from_s.make_ascii_uppercase();
+    println!("borrow_mut_from_s: {}", borrow_mut_from_s);
+    println!("s: {}", s);
+
+    // str 是 UTF-8 变长编码，没有 chars_mut 方法，无法“逐个 &mut char 原地替换”。
+    // 若要逐字符原地修改，需先转成 Vec<char>：每个 char 固定 4 字节，可安全 iter_mut。
+    let mut chars: Vec<char> = s.chars().collect();
+    for c in chars.iter_mut() {
+        *c = c.to_ascii_uppercase();
+    }
+    println!(
+        "chars uppercased: {}",
+        chars.into_iter().collect::<String>()
+    );
+
+    let mut my_data: Vec<i32> = vec![1, 2, 3, 4, 5];
+    let data_slice: &mut [i32] = &mut my_data[1..3]; // [2, 3]
+    println!("data_slice: {:?}", data_slice);
 
     // 数组切片
     let arr = [1, 2, 3, 4, 5];
@@ -124,17 +145,16 @@ pub fn lifetime_demo() {
         result = longest(string1.as_str(), string2.as_str());
         println!("longest: {}", result);
     }
-    // 注意：result 在 string2 被 drop 后仍然可以使用，
-    // 因为返回值的生命周期与 string1 一致（更长的那个）
+    // 注意：result 的生命周期是 string1 和 string2 中较短的那个（即 string2），
+    // 因为 longest 的签名要求 x 和 y 共享相同的生命周期 'a。
+    // 所以 result 只能在内层作用域内使用，不能在 string2 drop 后使用。
 
     // 结构体中的生命周期标注
     let novel = String::from("Call me Ishmael. Some years ago...");
     let excerpt;
     {
         let i = novel.find('.').unwrap_or(novel.len());
-        excerpt = ImportantExcerpt {
-            part: &novel[..i],
-        };
+        excerpt = ImportantExcerpt { part: &novel[..i] };
         println!("excerpt: {}", excerpt.part);
     }
     // excerpt 在 novel 有效期间都可以使用
