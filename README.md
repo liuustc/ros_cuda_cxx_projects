@@ -134,7 +134,7 @@ ros2 run talker_listener talker
 
 ### 6. Rust 学习 (rust_demo/)
 
-Rust 入门示例，涵盖基础语法。
+Rust 核心特性学习示例，涵盖从基础到进阶的所有重要内容。
 
 **运行**：
 ```bash
@@ -142,7 +142,35 @@ cd rust_demo
 cargo run
 ```
 
-**示例内容**：变量与可变性、元组数组、函数、控制流、所有权与借用、结构体、枚举与模式匹配、错误处理、迭代器。
+**示例内容**：
+
+| 文件 | 主题 | 核心概念 |
+|------|------|----------|
+| **基础部分** |||
+| `_01_ownership.rs` | 所有权系统 | move、借用、切片、生命周期 |
+| `_02_concurrency.rs` | 多线程 | Arc、Mutex、channel、RwLock、Barrier |
+| `_03_std_components.rs` | 标准库 | Vec、String、HashMap、迭代器、Option/Result |
+| **核心特性** |||
+| `_04_trait.rs` | Trait 系统 | trait定义、动态分发、关联类型、运算符重载 |
+| `_05_generic.rs` | 泛型 | 函数泛型、结构体泛型、const泛型、trait约束 |
+| `_06_pattern_matching.rs` | 模式匹配 | match、解构、守卫、if let、@绑定 |
+| `_07_closure.rs` | 闭包 | Fn/FnMut/FnOnce、捕获环境、迭代器适配 |
+| `_08_smart_pointer.rs` | 智能指针 | Box、Rc、Cell、RefCell、Cow、Weak、Drop |
+| `_09_async.rs` | 异步编程 | Future、async/await、Pin、异步运行时 |
+| `_10_error_handling.rs` | 错误处理 | Result、Option、?运算符、自定义错误 |
+| `_11_macro.rs` | 宏 | 声明宏、过程宏、derive宏、宏卫生性 |
+| **生态工具** |||
+| `_12_testing.rs` | 单元测试 | #[test]、断言宏、参数化测试、并发测试 |
+| `_13_networking.rs` | 网络库 | reqwest、tokio、TCP/UDP、WebSocket、axum |
+| `_14_logging.rs` | 日志库 | log、tracing、结构化日志、日志级别 |
+| `_15_ffi.rs` | C/C++ 互操作 | extern "C"、类型映射、bindgen、cbindgen |
+| `_16_cargo.rs` | 依赖管理 | Cargo.toml、features、workspace、构建脚本 |
+
+**学习路径建议**：
+1. 先学 01-03（基础）
+2. 再学 04-08（核心特性）
+3. 然后学 09-11（进阶）
+4. 最后学 12-16（生态工具）
 
 ## 环境
 
