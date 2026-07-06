@@ -10,7 +10,7 @@ pub fn cargo_toml_structure() {
     println!("[package]");
     println!("name = \"my_project\"");
     println!("version = \"0.1.0\"");
-    println!("edition = \"2021\"");
+    println!("edition = \"2024\"");
     println!("authors = [\"Your Name <email@example.com>\"]");
     println!("description = \"A short description\"");
     println!("license = \"MIT\"");

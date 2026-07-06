@@ -168,13 +168,17 @@ mod error_tests {
         Overflow,
     }
 
+    // 用 checked_add 防止溢出
     fn safe_add(a: i32, b: i32) -> Result<i32, Error> {
-        let result = a.checked_add(b).ok_or(Error::Overflow)?;
-        if result < 0 {
-            Err(Error::InvalidInput)
-        } else {
-            Ok(result)
+        a.checked_add(b).ok_or(Error::Overflow)
+    }
+
+    // 带输入校验：拒绝负数
+    fn positive_add(a: i32, b: i32) -> Result<i32, Error> {
+        if a < 0 || b < 0 {
+            return Err(Error::InvalidInput);
         }
+        a.checked_add(b).ok_or(Error::Overflow)
     }
 
     #[test]
@@ -188,9 +192,15 @@ mod error_tests {
     }
 
     #[test]
-    fn test_invalid() {
-        // 这个测试实际上不会触发 InvalidInput，因为 checked_add 会先检查溢出
-        assert_eq!(safe_add(0, 0), Ok(0));
+    fn test_invalid_input() {
+        // 负数被拒绝，触发 InvalidInput
+        assert_eq!(positive_add(-1, 5), Err(Error::InvalidInput));
+        assert_eq!(positive_add(1, -5), Err(Error::InvalidInput));
+    }
+
+    #[test]
+    fn test_positive_add_success() {
+        assert_eq!(positive_add(10, 20), Ok(30));
     }
 }
 
@@ -269,8 +279,63 @@ pub fn testing_tips() {
     println!("6. 显示输出：cargo test -- --nocapture");
 }
 
+/// 集成测试 vs 单元测试
+pub fn integration_test_demo() {
+    println!("\n=== 集成测试 ===");
+    println!("集成测试放在项目的 tests/ 目录下（与 src/ 同级）：");
+    println!();
+    println!("  tests/");
+    println!("  ├── integration_test.rs  // 每个文件是一个独立的测试 crate");
+    println!("  └── common/");
+    println!("      └── mod.rs           // 共享的测试辅助模块");
+    println!();
+    println!("集成测试示例 (tests/api_test.rs)：");
+    println!("  use my_crate::some_function;");
+    println!();
+    println!("  #[test]");
+    println!("  fn test_workflow() {{");
+    println!("      let result = some_function(42);");
+    println!("      assert_eq!(result, 84);");
+    println!("  }}");
+    println!();
+    println!("运行集成测试：cargo test --test integration_test");
+    println!();
+    println!("单元测试 vs 集成测试：");
+    println!("  单元测试: #[cfg(test)] mod tests {{ ... }} 在源码文件中");
+    println!("    - 可以访问私有函数");
+    println!("    - 与源码紧密耦合");
+    println!("    - 运行更快");
+    println!("  集成测试: tests/ 目录");
+    println!("    - 只能访问公开 API");
+    println!("    - 测试完整功能流程");
+    println!("    - 模拟真实使用场景");
+}
+
+/// 文档测试示例
+pub fn doc_test_demo() {
+    println!("\n=== 文档测试 ===");
+    println!("文档测试写在 /// 注释中，cargo test 会编译并运行它们：");
+    println!();
+    println!("  /// 返回两个数的和");
+    println!("  ///");
+    println!("  /// # Examples");
+    println!("  ///");
+    println!("  /// ```");
+    println!("  /// let result = my_crate::add(2, 3);");
+    println!("  /// assert_eq!(result, 5);");
+    println!("  /// ```");
+    println!("  pub fn add(a: i32, b: i32) -> i32 {{ a + b }}");
+    println!();
+    println!("文档测试的好处：");
+    println!("  1. 代码示例自动验证，不会过时");
+    println!("  2. 生成的文档中包含可运行的示例");
+    println!("  3. 运行：cargo test --doc");
+}
+
 /// 运行示例
 pub fn run() {
     testing_tips();
+    integration_test_demo();
+    doc_test_demo();
     println!("\n运行测试：cargo test");
 }

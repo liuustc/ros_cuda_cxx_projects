@@ -118,8 +118,8 @@ pub fn struct_passing() {
 
     println!("\n#[repr(C)] 保证：");
     println!("  - 字段顺序不变");
-    println!("  - 对齐方式与 C 一致");
-    println!("  - 没有填充字节（除非 C 也有）");
+    println!("  - 对齐与填充规则与 C 编译器一致");
+    println!("  - 可以安全地通过 FFI 边界传递");
 }
 
 /// 回调函数

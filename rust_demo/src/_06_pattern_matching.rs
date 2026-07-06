@@ -128,8 +128,11 @@ pub fn if_while_let() {
         println!("max is {}", max);
     }
 
-    // 等价的 match 写法更冗长
-    if let Some(max) = config_max { println!("max is {} (via match)", max) }
+    // match 写法（等价于上面的 if let，可读性更好）
+    // 单臂 match 等价于 if let，clippy 建议用 if let
+    if let Some(max) = config_max {
+        println!("max is {} (via match)", max);
+    }
 
     // while let：循环直到模式不匹配
     let mut stack = vec![1, 2, 3, 4, 5];

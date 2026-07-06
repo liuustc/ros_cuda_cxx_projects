@@ -250,6 +250,9 @@ pub fn thread_pool_demo() {
         let handle = thread::spawn(move || {
             loop {
                 // 从通道接收任务
+                // 注意：recv() 阻塞期间持有 Mutex 锁，
+                // 其他工作线程会被挡在 lock() 处 —— 这是演示用简化实现，
+                // 高效的线程池通常用条件变量 + 无锁队列等方案
                 let task = rx.lock().unwrap().recv();
                 match task {
                     Ok(task) => {
@@ -283,6 +286,51 @@ pub fn thread_pool_demo() {
     println!("thread pool shutdown");
 }
 
+/// Send 和 Sync：线程安全标记 trait
+///
+/// 这两个 auto trait 是 Rust 并发安全的基础：
+/// - Send：类型可以安全地将所有权转移到另一个线程
+/// - Sync：类型的引用可以安全地在多个线程间共享
+///
+/// 编译器会自动推导它们，大多数类型都是 Send + Sync。
+/// 手动实现 unsafe Send/Sync 需要小心（见 _17_unsafe 模块）。
+pub fn send_sync_demo() {
+    println!("\n=== Send 与 Sync trait ===");
+
+    // Send：可以跨线程转移所有权
+    // 几乎所有基础类型都是 Send（i32, String, Vec<T: Send>, Box<T: Send>...）
+    // Rc<T> 不是 Send（非原子引用计数，不能跨线程）
+    // Arc<T: Send> 才是 Send（原子引用计数）
+
+    println!("Send trait: 所有权可以安全地转移到另一个线程");
+    println!("  Send 类型: i32, String, Vec<T: Send>, Arc<T: Send>");
+    println!("  !Send 类型: Rc<T>, *const T, *mut T, Cell<T>");
+    println!();
+
+    // Sync：可以跨线程共享引用
+    // T: Sync 当且仅当 &T: Send
+    // Mutex<T: Send>: Sync —— 这就是为什么 Arc<Mutex<T>> 能安全跨线程共享
+
+    println!("Sync trait: 引用可以安全地在多个线程间共享");
+    println!("  Sync 类型: i32, &str, Mutex<T: Send>, RwLock<T: Send>");
+    println!("  !Sync 类型: Rc<T>, Cell<T>, RefCell<T>");
+    println!();
+
+    // 利用 Send 约束在编译期防止错误
+    // 下面的代码如果去掉注释，编译器会报错：
+    // use std::rc::Rc;
+    // let non_send = Rc::new(42);
+    // thread::spawn(move || { println!("{}", non_send); });
+    //     // 编译错误：Rc<i32> 不是 Send
+
+    println!("编译器自动检查 Send/Sync，在编译期防止数据竞争。");
+    println!("标记 trait 总结：");
+    println!("  Send = 所有权可跨线程转移");
+    println!("  Sync = 引用可跨线程共享（等价于 &T: Send）");
+    println!("  Auto trait = 编译器自动推导");
+    println!("  unsafe impl = 需要手动担保安全性");
+}
+
 /// 运行所有并发示例
 pub fn run() {
     basic_threads();
@@ -294,4 +342,5 @@ pub fn run() {
     barrier_demo();
     condvar_demo();
     thread_pool_demo();
+    send_sync_demo();
 }

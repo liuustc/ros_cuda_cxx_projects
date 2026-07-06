@@ -354,11 +354,12 @@ pub fn custom_iterator() {
     println!("fibonacci: {:?}", fib);
 
     // 使用迭代器适配器
+    // 取前 20 个斐波那契数，从中筛出偶数求和
     let fib_even_sum: u64 = Fibonacci::new()
         .take(20)
         .filter(|x| x % 2 == 0)
         .sum();
-    println!("sum of first 20 even fibs: {}", fib_even_sum);
+    println!("sum of evens among first 20 Fib numbers: {}", fib_even_sum);
 }
 
 /// 运行所有标准库示例

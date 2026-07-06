@@ -165,6 +165,7 @@ cargo run
 | `_14_logging.rs` | 日志库 | log、tracing、结构化日志、日志级别 |
 | `_15_ffi.rs` | C/C++ 互操作 | extern "C"、类型映射、bindgen、cbindgen |
 | `_16_cargo.rs` | 依赖管理 | Cargo.toml、features、workspace、构建脚本 |
+| `_17_unsafe.rs` | Unsafe Rust | 裸指针、UnsafeCell、FFI安全、Send/Sync |
 
 **学习路径建议**：
 1. 先学 01-03（基础）

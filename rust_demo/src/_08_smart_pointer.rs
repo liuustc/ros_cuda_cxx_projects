@@ -236,6 +236,71 @@ pub fn drop_demo() {
     println!("  conn2 dropped early");
 }
 
+/// Deref 强制转换：让智能指针像普通引用一样使用
+///
+/// 实现 Deref trait 的类型，编译器会在需要时自动插入解引用操作。
+/// 这是为什么 `Box<String>` 可以直接调用 `String` 的方法。
+pub fn deref_coercion() {
+    println!("\n=== Deref 强制转换 ===");
+
+    // 手动实现一个简单的智能指针来演示 Deref
+    struct MyBox<T>(T);
+
+    impl<T> MyBox<T> {
+        fn new(x: T) -> MyBox<T> {
+            MyBox(x)
+        }
+    }
+
+    // 实现 Deref trait
+    use std::ops::Deref;
+    impl<T> Deref for MyBox<T> {
+        type Target = T;
+
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    let my_box = MyBox::new(String::from("hello"));
+    // 调用 &my_box.deref() 获得 &String
+    // 编译器自动解引用，允许调用 String 的方法
+    println!("my_box len: {}", my_box.len()); // MyBox -> String -> len()
+
+    // Deref 强制转换发生在以下场景：
+    // 1. 方法调用时自动解引用（如上）
+    // 2. 函数参数：&MyBox<T> 可自动转为 &T
+    fn print_str(s: &str) {
+        println!("  print_str: {}", s);
+    }
+    // &MyBox<String> → &String → &str（连续两次 Deref 强制转换！）
+    print_str(&my_box);
+
+    // 3. 解引用运算符 *
+    // Rust 的自动解引用：&my_box 等价于 &(*my_box)，编译器自动插入 deref()
+    let value_ref: &String = &my_box; // MyBox<T> → T → (Deref 到 String)
+    println!("derefed: {}", value_ref);
+
+    // 注意：DerefMut 用于可变解引用
+    // impl DerefMut for MyBox<T> {
+    //     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
+    // }
+
+    // 标准库中的 Deref 实现链：
+    // Box<T> → T
+    // String → str
+    // Vec<T> → [T]
+    // Rc<T> → T
+    // Arc<T> → T
+
+    println!();
+    println!("Deref 强制转换总结：");
+    println!("  方法调用：box.method() 自动解引用查找方法");
+    println!("  函数参数：&MyBox<T> 自动转为 &T");
+    println!("  连续转换：&MyBox<String> 可转为 &str（通过 String 的 Deref）");
+    println!("  这是 Rust 人机工程学的核心机制之一");
+}
+
 /// 运行所有智能指针示例
 pub fn run() {
     box_demo();
@@ -244,4 +309,5 @@ pub fn run() {
     cow_demo();
     weak_demo();
     drop_demo();
+    deref_coercion();
 }

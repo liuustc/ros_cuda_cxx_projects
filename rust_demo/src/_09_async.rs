@@ -13,6 +13,32 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
+/// 简易的执行器：阻塞等待一个 Future 完成
+/// 仅用于演示，实际项目请使用 tokio 等正式运行时
+fn block_on<F: Future>(future: F) -> F::Output {
+    // noop waker：不唤醒任何任务（适用于不依赖唤醒的简单 Future）
+    fn noop_waker() -> Waker {
+        use std::task::{RawWaker, RawWakerVTable};
+        fn noop(_: *const ()) {}
+        fn clone(_: *const ()) -> RawWaker {
+            RawWaker::new(std::ptr::null(), &VTABLE)
+        }
+        static VTABLE: RawWakerVTable = RawWakerVTable::new(clone, noop, noop, noop);
+        unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VTABLE)) }
+    }
+
+    let waker = noop_waker();
+    let mut cx = Context::from_waker(&waker);
+    // 用 Box::pin 将 Future 固定在堆上，避免 unsafe 的手动 Pin 操作
+    let mut future = Box::pin(future);
+    loop {
+        match future.as_mut().poll(&mut cx) {
+            Poll::Ready(result) => return result,
+            Poll::Pending => continue,
+        }
+    }
+}
+
 /// Future trait 基础
 pub fn future_basics() {
     println!("=== Future 基础 ===");
@@ -35,32 +61,6 @@ pub fn future_basics() {
     }
 
     // 使用简单的阻塞执行器
-    fn block_on<F: Future>(mut future: F) -> F::Output {
-        // 创建一个简单的 waker
-        let waker = noop_waker();
-        let mut cx = Context::from_waker(&waker);
-        let mut pinned = unsafe { Pin::new_unchecked(&mut future) };
-        loop {
-            match pinned.as_mut().poll(&mut cx) {
-                Poll::Ready(result) => return result,
-                Poll::Pending => continue,
-            }
-        }
-    }
-
-    // noop waker 实现
-    fn noop_waker() -> std::task::Waker {
-        use std::task::{RawWaker, RawWakerVTable};
-
-        fn noop(_: *const ()) {}
-        fn clone(_: *const ()) -> RawWaker {
-            RawWaker::new(std::ptr::null(), &VTABLE)
-        }
-
-        static VTABLE: RawWakerVTable = RawWakerVTable::new(clone, noop, noop, noop);
-        unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VTABLE)) }
-    }
-
     let future = Ready(42);
     let result = block_on(future);
     println!("ready future result: {}", result);
@@ -84,56 +84,12 @@ pub fn async_await_syntax() {
     }
 
     // 简单的阻塞执行器
-    fn block_on<F: Future>(mut future: F) -> F::Output {
-        fn noop_waker() -> std::task::Waker {
-            use std::task::{RawWaker, RawWakerVTable};
-            fn noop(_: *const ()) {}
-            fn clone(_: *const ()) -> RawWaker {
-                RawWaker::new(std::ptr::null(), &VTABLE)
-            }
-            static VTABLE: RawWakerVTable = RawWakerVTable::new(clone, noop, noop, noop);
-            unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VTABLE)) }
-        }
-
-        let waker = noop_waker();
-        let mut cx = Context::from_waker(&waker);
-        let mut pinned = unsafe { Pin::new_unchecked(&mut future) };
-        loop {
-            match pinned.as_mut().poll(&mut cx) {
-                Poll::Ready(result) => return result,
-                Poll::Pending => continue,
-            }
-        }
-    }
-
     block_on(process());
 }
 
 /// async 块和闭包
 pub fn async_blocks() {
     println!("\n=== async 块 ===");
-
-    fn block_on<F: Future>(mut future: F) -> F::Output {
-        fn noop_waker() -> std::task::Waker {
-            use std::task::{RawWaker, RawWakerVTable};
-            fn noop(_: *const ()) {}
-            fn clone(_: *const ()) -> RawWaker {
-                RawWaker::new(std::ptr::null(), &VTABLE)
-            }
-            static VTABLE: RawWakerVTable = RawWakerVTable::new(clone, noop, noop, noop);
-            unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VTABLE)) }
-        }
-
-        let waker = noop_waker();
-        let mut cx = Context::from_waker(&waker);
-        let mut pinned = unsafe { Pin::new_unchecked(&mut future) };
-        loop {
-            match pinned.as_mut().poll(&mut cx) {
-                Poll::Ready(result) => return result,
-                Poll::Pending => continue,
-            }
-        }
-    }
 
     // async 块创建匿名 Future
     let future = async {
@@ -178,28 +134,6 @@ pub fn future_combinators() {
         println!("  chain result: {}", sum);
     }
 
-    fn block_on<F: Future>(mut future: F) -> F::Output {
-        fn noop_waker() -> std::task::Waker {
-            use std::task::{RawWaker, RawWakerVTable};
-            fn noop(_: *const ()) {}
-            fn clone(_: *const ()) -> RawWaker {
-                RawWaker::new(std::ptr::null(), &VTABLE)
-            }
-            static VTABLE: RawWakerVTable = RawWakerVTable::new(clone, noop, noop, noop);
-            unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VTABLE)) }
-        }
-
-        let waker = noop_waker();
-        let mut cx = Context::from_waker(&waker);
-        let mut pinned = unsafe { Pin::new_unchecked(&mut future) };
-        loop {
-            match pinned.as_mut().poll(&mut cx) {
-                Poll::Ready(result) => return result,
-                Poll::Pending => continue,
-            }
-        }
-    }
-
     block_on(chain());
 }
 
@@ -226,28 +160,6 @@ pub fn practical_patterns() {
             match fetch_url(url).await {
                 Ok(response) => println!("  got: {}", response),
                 Err(e) => println!("  error: {}", e),
-            }
-        }
-    }
-
-    fn block_on<F: Future>(mut future: F) -> F::Output {
-        fn noop_waker() -> std::task::Waker {
-            use std::task::{RawWaker, RawWakerVTable};
-            fn noop(_: *const ()) {}
-            fn clone(_: *const ()) -> RawWaker {
-                RawWaker::new(std::ptr::null(), &VTABLE)
-            }
-            static VTABLE: RawWakerVTable = RawWakerVTable::new(clone, noop, noop, noop);
-            unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VTABLE)) }
-        }
-
-        let waker = noop_waker();
-        let mut cx = Context::from_waker(&waker);
-        let mut pinned = unsafe { Pin::new_unchecked(&mut future) };
-        loop {
-            match pinned.as_mut().poll(&mut cx) {
-                Poll::Ready(result) => return result,
-                Poll::Pending => continue,
             }
         }
     }
