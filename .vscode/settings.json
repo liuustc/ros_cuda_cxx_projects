@@ -17,5 +17,10 @@
     },
     "[cuda]": {
         "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
-    }
+    },
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    },
+    "rust-analyzer.check.command": "clippy",
+    "rust-analyzer.cargo.features": "all"
 }

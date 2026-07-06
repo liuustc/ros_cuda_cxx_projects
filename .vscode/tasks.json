@@ -68,6 +68,39 @@
             },
             "group": "test",
             "problemMatcher": []
+        },
+        {
+            "label": "Rust: Build",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["build"],
+            "options": {
+                "cwd": "${workspaceFolder}/rust_demo"
+            },
+            "group": "build",
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "Rust: Run",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run"],
+            "options": {
+                "cwd": "${workspaceFolder}/rust_demo"
+            },
+            "group": "build",
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "Rust: Test",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["test"],
+            "options": {
+                "cwd": "${workspaceFolder}/rust_demo"
+            },
+            "group": "test",
+            "problemMatcher": ["$rustc"]
         }
     ]
 }

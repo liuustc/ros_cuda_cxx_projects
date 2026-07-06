@@ -5,6 +5,9 @@
 *.exe
 cuda_demo/cuda_test
 
+# Rust
+rust_demo/target/
+
 # Python
 __pycache__/
 *.pyc
